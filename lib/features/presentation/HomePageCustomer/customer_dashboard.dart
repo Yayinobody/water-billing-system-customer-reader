@@ -14,6 +14,7 @@ import '../../providers/CustomerProviders/billing_history&usage_provider.dart';
 import '../../providers/CustomerProviders/billing_usage_page_provider.dart';
 
 import '../LoginPage/login_page.dart';
+import 'Chatbot/chatbot_fab.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -64,20 +65,39 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
         centerTitle: false,
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const ReportIssuePage()),
-          );
-        },
-        icon: const Icon(Icons.report_problem, color: Colors.white),
-        label: const Text(
-          'Report an Issue',
-          style: TextStyle(color: Colors.white, fontSize: 12),
-        ),
-        backgroundColor: colors.primary,
+    floatingActionButton: Column(
+  mainAxisSize: MainAxisSize.min,
+  crossAxisAlignment: CrossAxisAlignment.end,
+  children: [
+    // Report Issue on top
+    FloatingActionButton.extended(
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ReportIssuePage()),
+        );
+      },
+      icon: const Icon(Icons.report_problem, color: Colors.white),
+      label: const Text(
+        'Report an Issue',
+        style: TextStyle(color: Colors.white, fontSize: 12),
       ),
+      backgroundColor: colors.primary,
+    ),
+    const SizedBox(height: 12),
+
+    // Chatbot below
+    FloatingActionButton.extended(
+      onPressed: () => showChatbotSheet(context),
+      icon: const Icon(Icons.chat_bubble, color: Colors.white),
+      label: const Text(
+        'Chat Assistant',
+        style: TextStyle(color: Colors.white, fontSize: 12),
+      ),
+      backgroundColor: colors.primary, // choose a distinct color
+    ),
+  ],
+),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -162,6 +182,7 @@ class _DashboardPageState extends State<DashboardPage> {
       ),
     );
   }
+  
 
   Widget _buildProfileCard(
     BuildContext context,

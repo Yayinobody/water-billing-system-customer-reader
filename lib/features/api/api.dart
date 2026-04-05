@@ -2,15 +2,15 @@ import 'package:dio/dio.dart';
 import './interceptor/auth_interceptor.dart'; // Ensure correct path
 
 class ApiService {
- static const String baseUrl = 'https://vinita-nonobstetrical-nondurably.ngrok-free.dev/api/mobile';
+ static const String baseUrl = 'http://10.124.78.6:8080/api/mobile';
   // static const String baseUrl = 'https://pajamaed-arjun-phrasally.ngrok-free.dev/api/mobile';
 
   // Create a Dio instance
   static final Dio _dio = Dio(
     BaseOptions(
       baseUrl: baseUrl,
-      connectTimeout: const Duration(seconds: 5),
-      receiveTimeout: const Duration(seconds: 3),
+      connectTimeout: const Duration(seconds: 30),
+      receiveTimeout: const Duration(seconds: 30),
       headers: {'Content-Type': 'application/json'},
     ),
   )..interceptors.add(AuthInterceptor()); // Attach your interceptor here!
