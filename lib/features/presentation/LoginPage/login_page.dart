@@ -7,6 +7,7 @@ import 'ActivateAccount/activate_account.dart';
 import 'ApplicationForm/application_form.dart';
 import 'Landing/landing_page.dart';
 import '../HomePageReader/reader_dashboard.dart';
+import '../HomePageCustomer/Chatbot/chatbot_fab.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -84,6 +85,16 @@ class _LoginPageState extends State<LoginPage> {
 
     return Scaffold(
       appBar: AppBar(centerTitle: true),
+      // 👇 ADD THIS PART
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => showChatbotSheet(context),
+        icon: const Icon(Icons.chat_bubble, color: Colors.white),
+        label: const Text(
+          'Chat Assistant',
+          style: TextStyle(color: Colors.white, fontSize: 12),
+        ),
+        backgroundColor: colors.primary,
+      ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),

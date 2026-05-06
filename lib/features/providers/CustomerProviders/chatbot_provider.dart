@@ -8,11 +8,8 @@ class ChatMessage {
   final bool isUser;
   final String time;
 
-  ChatMessage({
-    required this.text,
-    required this.isUser,
-    String? time,
-  }) : time = time ?? _formatNow();
+  ChatMessage({required this.text, required this.isUser, String? time})
+    : time = time ?? _formatNow();
 
   static String _formatNow() {
     final now = DateTime.now();
@@ -30,13 +27,11 @@ class ChatMessage {
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'text': text,
-      'isUser': isUser,
-      'time': time,
-    };
-  }
+  Map<String, dynamic> toJson() => {
+    'text': text,
+    'isUser': isUser,
+    'time': time,
+  };
 }
 
 class ChatbotProvider extends ChangeNotifier {
@@ -47,16 +42,53 @@ class ChatbotProvider extends ChangeNotifier {
   List<ChatMessage> get messages => List.unmodifiable(_messages);
   bool get isTyping => _isTyping;
 
-  // ── Public API ──────────────────────────────────────────────────────────────
+  static const List<String> _sensitiveKeywords = [
+    'bill',
+    'account',
+    'balance',
+    'usage',
+  ];
 
-  Future<void> sendMessage(String text) async {
+  // Maps display text → intent_id for the backend
+  static const Map<String, String> _intentMap = {
+    'How much is my current bill?': 'bill',
+    'How can I pay my bill?': 'payment',
+    'When will be the next billing cycle?': 'bill',
+    'How do I report a billing issue?': 'concern',
+    'How do I apply for a water connection?': 'payment',
+    'What payment methods are available?': 'payment',
+    'Where is your office located?': 'concern',
+    'How do I create an account?': 'concern',
+  };
+
+  Future<void> sendMessage(String text, {bool isAuthenticated = true}) async {
     if (text.trim().isEmpty) return;
 
     _addMessage(ChatMessage(text: text, isUser: true));
+
+    if (!isAuthenticated && _containsSensitiveKeyword(text)) {
+      await Future.delayed(const Duration(milliseconds: 400));
+      _addMessage(
+        ChatMessage(
+          text:
+              'Please log in to check your billing details. Would you like to log in now?',
+          isUser: false,
+        ),
+      );
+      return;
+    }
+
     _setTyping(true);
 
     try {
-      final response = await ApiService.post('/chat', {'message': text});
+      // Resolve intent_id if this message matches a known quick question
+      final intentId = _intentMap[text];
+
+      final response = await ApiService.post('/chat', {
+        'message': text,
+        if (intentId != null) 'intent_id': intentId,
+      });
+
       final reply = response.data['reply'] as String? ?? 'No response';
       _addMessage(ChatMessage(text: reply, isUser: false));
     } catch (e) {
@@ -64,6 +96,11 @@ class ChatbotProvider extends ChangeNotifier {
     } finally {
       _setTyping(false);
     }
+  }
+
+  bool _containsSensitiveKeyword(String text) {
+    final lower = text.toLowerCase();
+    return _sensitiveKeywords.any((kw) => lower.contains(kw));
   }
 
   Future<void> fetchHistory() async {
@@ -77,10 +114,9 @@ class ChatbotProvider extends ChangeNotifier {
         ..clear()
         ..addAll(history);
 
-      _addGreeting(); // Add greeting after loading history
+      _addGreeting();
     } catch (_) {
-      // Fail silently — history is non-critical
-      _addGreeting(); // Still add greeting if fetching history fails
+      _addGreeting();
     }
   }
 
@@ -104,15 +140,10 @@ class ChatbotProvider extends ChangeNotifier {
 
   void _addGreeting() {
     if (_hasGreeted) return;
-
     _messages.insert(
       0,
-      ChatMessage(
-        text: 'Hello! How can I help you today?',
-        isUser: false,
-      ),
+      ChatMessage(text: 'Hello! How can I help you today?', isUser: false),
     );
-
     _hasGreeted = true;
     notifyListeners();
   }

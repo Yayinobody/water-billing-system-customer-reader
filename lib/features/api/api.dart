@@ -2,8 +2,10 @@ import 'package:dio/dio.dart';
 import './interceptor/auth_interceptor.dart'; // Ensure correct path
 
 class ApiService {
- static const String baseUrl = 'http://10.124.78.6:8080/api/mobile';
-  // static const String baseUrl = 'https://pajamaed-arjun-phrasally.ngrok-free.dev/api/mobile';
+  //  static const String baseUrl = 'http://10.124.78.6:8080/api/mobile';
+  //  static const String baseUrl = 'https://pajamaed-arjun-phrasally.ngrok-free.dev/api/mobile';
+  static const String baseUrl =
+      'https://water-billing-system-iays.onrender.com/api/mobile';
 
   // Create a Dio instance
   static final Dio _dio = Dio(
@@ -16,7 +18,10 @@ class ApiService {
   )..interceptors.add(AuthInterceptor()); // Attach your interceptor here!
 
   // POST method
-  static Future<Response> post(String endpoint, Map<String, dynamic> body) async {
+  static Future<Response> post(
+    String endpoint,
+    Map<String, dynamic> body,
+  ) async {
     try {
       return await _dio.post(endpoint, data: body);
     } on DioException catch (e) {

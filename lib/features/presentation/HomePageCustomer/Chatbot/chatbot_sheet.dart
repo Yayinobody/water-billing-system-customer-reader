@@ -3,6 +3,30 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/CustomerProviders/chatbot_provider.dart';
+import '../../../providers/LoginProvider/auth_provider.dart'; // adjust path if needed
+
+// ── Quick Questions Helper ────────────────────────────────────────────────────
+
+List<String> getQuickQuestions(bool isLoggedIn) {
+  if (isLoggedIn) {
+    return [
+      'How do I check my current bill?',
+      'When is my bill due?',
+      'What payment methods can I use?',
+      'How do I report a billing issue?',
+      'When is the next billing cycle?',
+    ];
+  }
+
+  return [
+    'How do I apply for a new water connection?',
+    'What are your payment methods?',
+    'Where is your office located?',
+    'How do I create an account?',
+    'How long does connection processing take?',
+  ];
+}
+// ── Chatbot Sheet ─────────────────────────────────────────────────────────────
 
 class ChatbotSheet extends StatefulWidget {
   const ChatbotSheet({Key? key}) : super(key: key);
@@ -34,11 +58,15 @@ class _ChatbotSheetState extends State<ChatbotSheet> {
     });
   }
 
-  Future<void> _handleSend(ChatbotProvider provider) async {
-    final text = _inputController.text.trim();
-    if (text.isEmpty) return;
+  Future<void> _handleSend(
+    ChatbotProvider provider,
+    bool isLoggedIn,
+    String text,
+  ) async {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return;
     _inputController.clear();
-    await provider.sendMessage(text);
+    await provider.sendMessage(trimmed, isAuthenticated: isLoggedIn);
     _scrollToBottom();
   }
 
@@ -46,6 +74,9 @@ class _ChatbotSheetState extends State<ChatbotSheet> {
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     final primary = Theme.of(context).primaryColor;
+
+    // Read auth state from the existing AuthProvider (loggedIn, not isAuthenticated)
+    final isLoggedIn = context.watch<AuthProvider>().loggedIn;
 
     return ChangeNotifierProvider(
       create: (_) => ChatbotProvider()..fetchHistory(),
@@ -76,11 +107,18 @@ class _ChatbotSheetState extends State<ChatbotSheet> {
                   ),
                 ),
                 const Divider(height: 1, thickness: 0.5),
+                _QuickQuestions(
+                  isLoggedIn: isLoggedIn,
+                  primaryColor: primary,
+                  onQuestionTap: (question) =>
+                      _handleSend(provider, isLoggedIn, question),
+                ),
                 _InputBar(
                   controller: _inputController,
                   bottomInset: bottomInset,
                   primaryColor: primary,
-                  onSend: () => _handleSend(provider),
+                  onSend: () =>
+                      _handleSend(provider, isLoggedIn, _inputController.text),
                 ),
               ],
             ),
@@ -91,24 +129,24 @@ class _ChatbotSheetState extends State<ChatbotSheet> {
   }
 }
 
-// ── Drag Handle ──────────────────────────────────────────────────────────────
+// ── Drag Handle ───────────────────────────────────────────────────────────────
 
 class _DragHandle extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Container(
-          width: 36,
-          height: 4,
-          decoration: BoxDecoration(
-            color: Colors.grey[300],
-            borderRadius: BorderRadius.circular(3),
-          ),
-        ),
-      );
+    padding: const EdgeInsets.symmetric(vertical: 10),
+    child: Container(
+      width: 36,
+      height: 4,
+      decoration: BoxDecoration(
+        color: Colors.grey[300],
+        borderRadius: BorderRadius.circular(3),
+      ),
+    ),
+  );
 }
 
-// ── Chat Header ──────────────────────────────────────────────────────────────
+// ── Chat Header ───────────────────────────────────────────────────────────────
 
 class _ChatHeader extends StatelessWidget {
   const _ChatHeader({required this.primaryColor});
@@ -126,8 +164,11 @@ class _ChatHeader extends StatelessWidget {
               CircleAvatar(
                 radius: 22,
                 backgroundColor: primaryColor,
-                child: const Icon(Icons.support_agent_rounded,
-                    color: Colors.white, size: 24),
+                child: const Icon(
+                  Icons.support_agent_rounded,
+                  color: Colors.white,
+                  size: 24,
+                ),
               ),
               Positioned(
                 bottom: 0,
@@ -151,9 +192,10 @@ class _ChatHeader extends StatelessWidget {
               const Text(
                 'Support Assistant',
                 style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
               ),
               Text(
                 'Online · Typically replies instantly',
@@ -162,17 +204,13 @@ class _ChatHeader extends StatelessWidget {
             ],
           ),
           const Spacer(),
-        //   IconButton(
-        //     icon: Icon(Icons.more_horiz, color: Colors.grey[500]),
-        //     onPressed: () {},
-        //   ),
         ],
       ),
     );
   }
 }
 
-// ── Message List ─────────────────────────────────────────────────────────────
+// ── Message List ──────────────────────────────────────────────────────────────
 
 class _MessageList extends StatelessWidget {
   const _MessageList({
@@ -189,7 +227,7 @@ class _MessageList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final itemCount = messages.length + (isTyping ? 1 : 0) + 1; // +1 for date pill
+    final itemCount = messages.length + (isTyping ? 1 : 0) + 1;
 
     return ListView.builder(
       controller: scrollController,
@@ -213,7 +251,7 @@ class _MessageList extends StatelessWidget {
   }
 }
 
-// ── Date Separator ───────────────────────────────────────────────────────────
+// ── Date Separator ────────────────────────────────────────────────────────────
 
 class _DateSeparator extends StatelessWidget {
   const _DateSeparator({required this.label});
@@ -240,7 +278,7 @@ class _DateSeparator extends StatelessWidget {
   }
 }
 
-// ── Message Bubble ───────────────────────────────────────────────────────────
+// ── Message Bubble ────────────────────────────────────────────────────────────
 
 class _MessageBubble extends StatelessWidget {
   const _MessageBubble({required this.message, required this.primaryColor});
@@ -269,8 +307,11 @@ class _MessageBubble extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               child: Text(
                 message.text,
-                style:
-                    const TextStyle(color: Colors.white, fontSize: 14, height: 1.4),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  height: 1.4,
+                ),
               ),
             ),
             const SizedBox(height: 3),
@@ -291,8 +332,11 @@ class _MessageBubble extends StatelessWidget {
           CircleAvatar(
             radius: 14,
             backgroundColor: primaryColor,
-            child: const Icon(Icons.support_agent_rounded,
-                color: Colors.white, size: 16),
+            child: const Icon(
+              Icons.support_agent_rounded,
+              color: Colors.white,
+              size: 16,
+            ),
           ),
           const SizedBox(width: 8),
           Flexible(
@@ -310,12 +354,17 @@ class _MessageBubble extends StatelessWidget {
                     ),
                     border: Border.all(color: Colors.grey.shade200),
                   ),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                   child: Text(
                     message.text,
                     style: const TextStyle(
-                        color: Colors.black87, fontSize: 14, height: 1.4),
+                      color: Colors.black87,
+                      fontSize: 14,
+                      height: 1.4,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 3),
@@ -332,7 +381,7 @@ class _MessageBubble extends StatelessWidget {
   }
 }
 
-// ── Typing Indicator ─────────────────────────────────────────────────────────
+// ── Typing Indicator ──────────────────────────────────────────────────────────
 
 class _TypingIndicator extends StatefulWidget {
   const _TypingIndicator({required this.primaryColor});
@@ -371,8 +420,11 @@ class _TypingIndicatorState extends State<_TypingIndicator>
           CircleAvatar(
             radius: 14,
             backgroundColor: widget.primaryColor,
-            child: const Icon(Icons.support_agent_rounded,
-                color: Colors.white, size: 16),
+            child: const Icon(
+              Icons.support_agent_rounded,
+              color: Colors.white,
+              size: 16,
+            ),
           ),
           const SizedBox(width: 8),
           Container(
@@ -393,11 +445,12 @@ class _TypingIndicatorState extends State<_TypingIndicator>
                 return AnimatedBuilder(
                   animation: _controller,
                   builder: (_, __) {
-                    final offset =
-                        ((_controller.value * 3) - i).clamp(0.0, 1.0);
-                    final opacity =
-                        (offset < 0.5 ? offset * 2 : 2 - offset * 2)
-                            .clamp(0.3, 1.0);
+                    final offset = ((_controller.value * 3) - i).clamp(
+                      0.0,
+                      1.0,
+                    );
+                    final opacity = (offset < 0.5 ? offset * 2 : 2 - offset * 2)
+                        .clamp(0.3, 1.0);
                     return Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 2),
                       child: Opacity(
@@ -423,7 +476,64 @@ class _TypingIndicatorState extends State<_TypingIndicator>
   }
 }
 
-// ── Input Bar ────────────────────────────────────────────────────────────────
+// ── Quick Questions ───────────────────────────────────────────────────────────
+
+class _QuickQuestions extends StatelessWidget {
+  const _QuickQuestions({
+    required this.isLoggedIn,
+    required this.primaryColor,
+    required this.onQuestionTap,
+  });
+
+  final bool isLoggedIn;
+  final Color primaryColor;
+  final void Function(String question) onQuestionTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final questions = getQuickQuestions(isLoggedIn);
+
+    return SizedBox(
+      height: 44,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        itemCount: questions.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final question = questions[index];
+          return GestureDetector(
+            onTap: () => onQuestionTap(question),
+            child: Container(
+              alignment: Alignment.center,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: primaryColor.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: primaryColor.withOpacity(0.25),
+                  width: 1,
+                ),
+              ),
+              child: Text(
+                question,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: primaryColor,
+                  fontWeight: FontWeight.w500,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+// ── Input Bar ─────────────────────────────────────────────────────────────────
 
 class _InputBar extends StatelessWidget {
   const _InputBar({
