@@ -20,8 +20,8 @@ List<String> getQuickQuestions(bool isLoggedIn) {
 
   return [
     'How do I apply for a new water connection?',
-    'What are your payment methods?',
-    'Where is your office located?',
+    'What are the payment methods?',
+    'Where is the office located?',
     'How do I create an account?',
     'How long does connection processing take?',
   ];

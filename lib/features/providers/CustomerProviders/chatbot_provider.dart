@@ -84,7 +84,7 @@ class ChatbotProvider extends ChangeNotifier {
       // Resolve intent_id if this message matches a known quick question
       final intentId = _intentMap[text];
 
-      final response = await ApiService.post('/chat', {
+      final response = await ApiService.post('/public/chat', {
         'message': text,
         if (intentId != null) 'intent_id': intentId,
       });
@@ -105,7 +105,7 @@ class ChatbotProvider extends ChangeNotifier {
 
   Future<void> fetchHistory() async {
     try {
-      final data = await ApiService.get('/chat') as List<dynamic>;
+      final data = await ApiService.get('/public/chat') as List<dynamic>;
       final history = data
           .map((item) => ChatMessage.fromJson(item as Map<String, dynamic>))
           .toList();
